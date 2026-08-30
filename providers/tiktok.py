@@ -55,11 +55,19 @@ PERMANENT_PUBLISH_ERROR_CODES = frozenset(
     }
 )
 
-UNAUDITED_CLIENT_HINT = (
+UNAUDITED_POST_PRIVACY_HINT = (
     "The TikTok app has not passed TikTok's content-posting audit yet. "
     "Until TikTok approves the audit (developer portal → Content Posting API "
     "→ apply for an audit), videos can only be published as private "
     "(SELF_ONLY). Set this post's TikTok privacy to 'Only you' to publish now."
+)
+
+UNAUDITED_PRIVATE_ACCOUNT_HINT = (
+    "TikTok rejected the post because this unaudited app can only post to a "
+    "TikTok account whose account visibility is set to private. The post was "
+    "already sent with private SELF_ONLY viewership; changing only the post's "
+    "visibility is not enough. Make the target TikTok account itself private "
+    "and try again, or complete TikTok's Content Posting API audit."
 )
 
 # Optional post_info fields the composer may set via platform_extra.
@@ -335,7 +343,7 @@ class TikTokProvider(SocialProvider):
                     f"account (allowed: {', '.join(options)})."
                 )
                 if options == ["SELF_ONLY"]:
-                    message = f"{message} {UNAUDITED_CLIENT_HINT}"
+                    message = f"{message} {UNAUDITED_POST_PRIVACY_HINT}"
                 raise PublishError(
                     message,
                     platform=self.platform_name,
@@ -399,7 +407,7 @@ class TikTokProvider(SocialProvider):
             raise exc
         message = f"TikTok rejected the post ({code}): {exc}"
         if code == "unaudited_client_can_only_post_to_private_accounts":
-            message = f"TikTok rejected the post: {UNAUDITED_CLIENT_HINT}"
+            message = UNAUDITED_PRIVATE_ACCOUNT_HINT
         raise PublishError(
             message,
             platform=self.platform_name,
