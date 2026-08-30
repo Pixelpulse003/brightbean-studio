@@ -521,10 +521,14 @@ class TestPublishPost:
 
         provider = TikTokProvider({"client_key": "k", "client_secret": "s"})
         with pytest.raises(PublishError) as excinfo:
-            provider.publish_post("tok", _video_content())
+            provider.publish_post("tok", _video_content(privacy_level="SELF_ONLY"))
 
         assert excinfo.value.retryable is False
         assert "audit" in str(excinfo.value)
+        assert "account itself private" in str(excinfo.value)
+        assert "already sent with private SELF_ONLY" in str(excinfo.value)
+        init_call = mock_request.call_args_list[1]
+        assert init_call.kwargs["json"]["post_info"]["privacy_level"] == "SELF_ONLY"
 
     @patch.object(TikTokProvider, "_request")
     def test_init_unknown_error_stays_retryable(self, mock_request):

@@ -195,6 +195,29 @@ class DispatchExtraInjectionTest(SimpleTestCase):
         _access_token, content = mock_provider.publish_post.call_args.args
         self.assertNotIn("author", content.extra)
 
+    @patch("apps.publisher.engine.get_provider")
+    @patch("apps.publisher.engine._resolve_publish_credentials", return_value={})
+    def test_preserves_tiktok_self_only_privacy_for_provider(self, _mock_creds, mock_get_provider):
+        engine, platform_post, mock_provider = _build_dispatch_mocks(
+            platform="tiktok",
+            account_platform_id="tiktok-user-1",
+            platform_extra={
+                "privacy_level": "SELF_ONLY",
+                "disable_comment": True,
+                "disable_duet": True,
+                "disable_stitch": True,
+            },
+        )
+        mock_get_provider.return_value = mock_provider
+
+        engine._dispatch_to_provider(platform_post)
+
+        _access_token, content = mock_provider.publish_post.call_args.args
+        self.assertEqual(content.extra["privacy_level"], "SELF_ONLY")
+        self.assertTrue(content.extra["disable_comment"])
+        self.assertTrue(content.extra["disable_duet"])
+        self.assertTrue(content.extra["disable_stitch"])
+
 
 class ResolvePublishCredentialsTest(SimpleTestCase):
     @patch("apps.publisher.engine.resolve_platform_credentials", return_value={"client_id": "id"})
